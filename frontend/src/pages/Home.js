@@ -26,6 +26,8 @@ import {
   ChevronRight,
   Close,
   Logout,
+  CheckBox,
+  CheckBoxOutlineBlank,
 } from '@mui/icons-material';
 import GeoDrawer from '../components/GeoDrawer';
 import MapView from '../components/MapView';
@@ -57,6 +59,7 @@ function Home() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [geoData, setGeoData] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [selectedItems, setSelectedItems] = useState([]);
   
   const searchRef = useRef(null);
 
@@ -267,6 +270,8 @@ function Home() {
     const newHistory = searchHistory.filter(item => item.ip !== ip);
     setSearchHistory(newHistory);
     localStorage.setItem('ipSearchHistory', JSON.stringify(newHistory));
+    // Remove from selected items if it was selected
+    setSelectedItems(selectedItems.filter(item => item !== ip));
   };
 
   const handleClearAllHistory = () => {
@@ -274,6 +279,30 @@ function Home() {
     localStorage.removeItem('ipSearchHistory');
     setShowDropdown(false);
     setDrawerOpen(false);
+    setSelectedItems([]);
+  };
+
+  const handleToggleSelect = (ip) => {
+    if (selectedItems.includes(ip)) {
+      setSelectedItems(selectedItems.filter(item => item !== ip));
+    } else {
+      setSelectedItems([...selectedItems, ip]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.length === searchHistory.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(searchHistory.map(item => item.ip));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    const newHistory = searchHistory.filter(item => !selectedItems.includes(item.ip));
+    setSearchHistory(newHistory);
+    localStorage.setItem('ipSearchHistory', JSON.stringify(newHistory));
+    setSelectedItems([]);
   };
 
   const handleOpenDrawer = () => {
@@ -283,6 +312,7 @@ function Home() {
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
+    setSelectedItems([]);
   };
 
   const handleDrawerHistoryClick = async (ip) => {
@@ -594,13 +624,60 @@ function Home() {
               borderBottom: '1px solid #f0f0f0',
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Search History
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Search History
+              </Typography>
+              {searchHistory.length > 0 && (
+                <Typography variant="caption" sx={{ color: '#999' }}>
+                  ({searchHistory.length})
+                </Typography>
+              )}
+            </Box>
             <IconButton onClick={handleCloseDrawer}>
               <Close />
             </IconButton>
           </Box>
+
+          {/* Select All / Delete Selected Bar */}
+          {searchHistory.length > 0 && (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 16px',
+                backgroundColor: '#f9f9f9',
+                borderBottom: '1px solid #f0f0f0',
+              }}
+            >
+              <Button
+                size="small"
+                startIcon={selectedItems.length === searchHistory.length ? <CheckBox /> : <CheckBoxOutlineBlank />}
+                onClick={handleSelectAll}
+                sx={{ textTransform: 'none', color: '#667eea', fontWeight: 600 }}
+              >
+                {selectedItems.length === searchHistory.length ? 'Deselect All' : 'Select All'}
+              </Button>
+              {selectedItems.length > 0 && (
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<Delete />}
+                  onClick={handleDeleteSelected}
+                  sx={{
+                    backgroundColor: '#ff6b6b',
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#ff5252',
+                    },
+                  }}
+                >
+                  Delete ({selectedItems.length})
+                </Button>
+              )}
+            </Box>
+          )}
 
           {/* Drawer Content */}
           <Box sx={{ flex: 1, overflowY: 'auto' }}>
@@ -608,35 +685,64 @@ function Home() {
               <List sx={{ padding: 0 }}>
                 {searchHistory.map((item, index) => (
                   <React.Fragment key={item.ip}>
-                    <ListItemButton
-                      onClick={() => handleDrawerHistoryClick(item.ip)}
+                    <ListItem
                       sx={{
-                        padding: '16px 20px',
+                        padding: 0,
                         '&:hover': {
                           backgroundColor: '#f5f5f5',
                         },
                       }}
                     >
-                      <History sx={{ fontSize: 20, color: '#999', marginRight: 2 }} />
-                      <ListItemText
-                        primary={item.ip}
-                        secondary={new Date(item.timestamp).toLocaleString()}
-                        primaryTypographyProps={{
-                          fontSize: 15,
-                          fontWeight: 600,
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          width: '100%',
+                          padding: '12px 16px',
                         }}
-                        secondaryTypographyProps={{
-                          fontSize: 12,
-                        }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleDeleteHistoryItem(item.ip, e)}
-                        sx={{ marginLeft: 1 }}
                       >
-                        <Delete sx={{ fontSize: 18, color: '#ff6b6b' }} />
-                      </IconButton>
-                    </ListItemButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleToggleSelect(item.ip)}
+                          sx={{ marginRight: 1 }}
+                        >
+                          {selectedItems.includes(item.ip) ? (
+                            <CheckBox sx={{ fontSize: 20, color: '#667eea' }} />
+                          ) : (
+                            <CheckBoxOutlineBlank sx={{ fontSize: 20, color: '#999' }} />
+                          )}
+                        </IconButton>
+                        <Box
+                          onClick={() => handleDrawerHistoryClick(item.ip)}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            flex: 1,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <History sx={{ fontSize: 20, color: '#999', marginRight: 2 }} />
+                          <ListItemText
+                            primary={item.ip}
+                            secondary={new Date(item.timestamp).toLocaleString()}
+                            primaryTypographyProps={{
+                              fontSize: 15,
+                              fontWeight: 600,
+                            }}
+                            secondaryTypographyProps={{
+                              fontSize: 12,
+                            }}
+                          />
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleDeleteHistoryItem(item.ip, e)}
+                          sx={{ marginLeft: 1 }}
+                        >
+                          <Delete sx={{ fontSize: 18, color: '#ff6b6b' }} />
+                        </IconButton>
+                      </Box>
+                    </ListItem>
                     {index < searchHistory.length - 1 && <Divider />}
                   </React.Fragment>
                 ))}
