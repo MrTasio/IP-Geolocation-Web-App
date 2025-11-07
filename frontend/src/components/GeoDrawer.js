@@ -58,7 +58,7 @@ function GeoDrawer({ geoData }) {
         <Box
           sx={{
             width: 40,
-            height: 4,
+            height: 1,
             backgroundColor: '#ddd',
             borderRadius: 2,
             marginRight: 2,
@@ -72,78 +72,72 @@ function GeoDrawer({ geoData }) {
         </IconButton>
       </Box>
 
-      {/* Drawer Content */}
-      <Collapse in={drawerOpen}>
-        <Box sx={{ padding: 3, maxHeight: '60vh', overflowY: 'auto' }}>
-          <Grid container spacing={3}>
-            {/* Geo Location Details - 2 Columns */}
-            <Grid item xs={12}>
-              <Box>
-                {/* IP Address */}
-                <Box sx={{ marginBottom: 2 }}>
-                  <Typography variant="caption" sx={{ color: '#999', fontSize: 10 }}>
-                    IP ADDRESS
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#333', fontSize: 18 }}>
-                    {geoData.ip}
-                  </Typography>
-                </Box>
+        {/* Drawer Content */}
+        <Collapse in={drawerOpen}>
+          <Box sx={{ padding: { xs: 2, md: 3 }, maxHeight: '60vh', overflowY: 'auto' }}>
+            {/* IP Address */}
+            <Box sx={{ marginBottom: 2 }}>
+              <Typography variant="caption" sx={{ color: '#999', fontSize: 10 }}>
+                IP ADDRESS
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#333', fontSize: { xs: 16, md: 18 } }}>
+                {geoData.ip}
+              </Typography>
+            </Box>
 
-                {/* Geo Details in 2 Columns */}
-                <Grid container spacing={2}>
-                  {/* Column 1 */}
-                  <Grid item xs={12} md={6}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                        <LocationCity sx={{ fontSize: 16, color: '#999' }} />
-                        <Typography variant="body2" sx={{ color: '#333', fontSize: 13 }}>
-                          {geoData.city}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                        <Map sx={{ fontSize: 16, color: '#999' }} />
-                        <Typography variant="body2" sx={{ color: '#333', fontSize: 13 }}>
-                          {geoData.region}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '8px 0' }}>
-                        <Flag sx={{ fontSize: 16, color: '#999' }} />
-                        <Typography variant="body2" sx={{ color: '#333', fontSize: 13 }}>
-                          {geoData.country}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-
-                  {/* Column 2 */}
-                  <Grid item xs={12} md={6}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                        <MarkunreadMailbox sx={{ fontSize: 16, color: '#999' }} />
-                        <Typography variant="body2" sx={{ color: '#333', fontSize: 13 }}>
-                          {geoData.postal}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                        <MyLocation sx={{ fontSize: 16, color: '#999' }} />
-                        <Typography variant="body2" sx={{ color: '#333', fontSize: 12 }}>
-                          {geoData.loc}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '8px 0' }}>
-                        <AccessTime sx={{ fontSize: 16, color: '#999' }} />
-                        <Typography variant="body2" sx={{ color: '#333', fontSize: 12 }}>
-                          {geoData.timezone}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                </Grid>
+            {/* Geo Details - Responsive Layout */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: { xs: 0, md: 3 },
+                flexWrap: 'wrap',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <LocationCity sx={{ fontSize: 18, color: '#999' }} />
+                <Typography variant="body2" sx={{ color: '#333', fontSize: 14, fontWeight: 500 }}>
+                  {geoData.city}
+                </Typography>
               </Box>
-            </Grid>
-          </Grid>
-        </Box>
-      </Collapse>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <Map sx={{ fontSize: 18, color: '#999' }} />
+                <Typography variant="body2" sx={{ color: '#333', fontSize: 14, fontWeight: 500 }}>
+                  {geoData.region}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <Flag sx={{ fontSize: 18, color: '#999' }} />
+                <Typography variant="body2" sx={{ color: '#333', fontSize: 14, fontWeight: 500 }}>
+                  {geoData.country}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <MarkunreadMailbox sx={{ fontSize: 18, color: '#999' }} />
+                <Typography variant="body2" sx={{ color: '#333', fontSize: 14, fontWeight: 500 }}>
+                  {geoData.postal}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <MyLocation sx={{ fontSize: 18, color: '#999' }} />
+                <Typography variant="body2" sx={{ color: '#333', fontSize: 13, fontWeight: 500 }}>
+                  {geoData.loc}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, padding: '10px 0', borderBottom: { xs: 'none', md: '1px solid #f0f0f0' } }}>
+                <AccessTime sx={{ fontSize: 18, color: '#999' }} />
+                <Typography variant="body2" sx={{ color: '#333', fontSize: 13, fontWeight: 500 }}>
+                  {geoData.timezone}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Collapse>
     </Box>
   );
 }
