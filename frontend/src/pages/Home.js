@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
   Paper,
+  TextField,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
 import {
   LocationOn,
+  Search,
+  Clear,
 } from '@mui/icons-material';
 import GeoDrawer from '../components/GeoDrawer';
 
@@ -21,6 +26,13 @@ function Home() {
     org: 'Google LLC',
     postal: '94043',
     timezone: 'America/Los_Angeles',
+  };
+
+  // Search state
+  const [searchValue, setSearchValue] = useState('');
+
+  const handleClearSearch = () => {
+    setSearchValue('');
   };
 
   return (
@@ -65,6 +77,60 @@ function Home() {
               {geoData.loc}
             </Typography>
           </Box>
+        </Box>
+
+        {/* Floating Search Bar */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '90%',
+            maxWidth: 500,
+            zIndex: 10,
+          }}
+        >
+          <Paper
+            elevation={3}
+            sx={{
+              borderRadius: 3,
+              overflow: 'hidden',
+            }}
+          >
+            <TextField
+              fullWidth
+              placeholder="Search IP address (e.g., 8.8.8.8)"
+              variant="outlined"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ color: '#999' }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchValue && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={handleClearSearch}>
+                      <Clear sx={{ fontSize: 20 }} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                sx: {
+                  backgroundColor: 'white',
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  paddingRight: 1,
+                },
+              }}
+            />
+          </Paper>
         </Box>
 
         {/* Bottom Drawer */}
