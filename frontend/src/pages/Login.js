@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Card, 
@@ -6,10 +7,63 @@ import {
   TextField, 
   Button, 
   Typography,
-  Divider 
+  Divider,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 
 function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Simple validation
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Call login API
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Save token and user info to localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirect to home
+        navigate('/home');
+      } else {
+        setError(data.message || 'Login failed');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Failed to connect to server. Make sure backend is running on port 8000.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Box
       sx={{
@@ -52,7 +106,7 @@ function Login() {
           </Typography>
 
           {/* Login Form */}
-          <Box component="form">
+          <Box component="form" onSubmit={handleSubmit}>
             {/* Email Field */}
             <Box sx={{ marginBottom: 2.5 }}>
               <Typography
@@ -70,6 +124,9 @@ function Login() {
                 placeholder="Enter your email"
                 fullWidth
                 variant="outlined"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
@@ -105,6 +162,9 @@ function Login() {
                 placeholder="Enter your password"
                 fullWidth
                 variant="outlined"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
@@ -123,11 +183,19 @@ function Login() {
               />
             </Box>
 
+            {/* Error Message */}
+            {error && (
+              <Alert severity="error" sx={{ marginBottom: 2 }}>
+                {error}
+              </Alert>
+            )}
+
             {/* Login Button */}
             <Button
               type="submit"
               fullWidth
               variant="contained"
+              disabled={loading}
               sx={{
                 padding: 1.75,
                 fontSize: 16,
@@ -141,9 +209,12 @@ function Login() {
                   transform: 'translateY(-2px)',
                   transition: 'all 0.3s',
                 },
+                '&:disabled': {
+                  opacity: 0.6,
+                },
               }}
             >
-              Login
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
             </Button>
           </Box>
 

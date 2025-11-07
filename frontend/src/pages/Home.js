@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -24,13 +25,28 @@ import {
   Delete,
   ChevronRight,
   Close,
+  Logout,
 } from '@mui/icons-material';
 import GeoDrawer from '../components/GeoDrawer';
 import MapView from '../components/MapView';
 
 function Home() {
-  // Static data for display purposes only
-  const userData = { name: 'John Doe' };
+  const navigate = useNavigate();
+  
+  // Get user data from localStorage
+  const [userData, setUserData] = useState(null);
+
+  // Load user data on mount
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        setUserData(JSON.parse(user));
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    }
+  }, []);
 
   // Search state
   const [searchValue, setSearchValue] = useState('');
@@ -288,6 +304,12 @@ function Home() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   return (
     <Box
       sx={{
@@ -339,6 +361,25 @@ function Home() {
             </Box>
           )}
         </Box>
+
+        {/* Logout Button */}
+        <IconButton
+          onClick={handleLogout}
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            zIndex: 1001,
+            backgroundColor: 'white',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            '&:hover': {
+              backgroundColor: '#ff6b6b',
+              color: 'white',
+            },
+          }}
+        >
+          <Logout />
+        </IconButton>
 
         {/* Floating Search Bar */}
         <Box
