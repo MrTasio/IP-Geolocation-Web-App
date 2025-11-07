@@ -6,6 +6,7 @@ import {
   TextField,
   InputAdornment,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   LocationOn,
@@ -30,9 +31,90 @@ function Home() {
 
   // Search state
   const [searchValue, setSearchValue] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Validate IP address (IPv4 and IPv6)
+  const isValidIP = (ip) => {
+    // IPv4 regex
+    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    // IPv6 regex (simplified)
+    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+    
+    if (!ip || ip.trim() === '') {
+      return false;
+    }
+
+    // Check IPv4
+    if (ipv4Regex.test(ip)) {
+      const parts = ip.split('.');
+      return parts.every(part => {
+        const num = parseInt(part, 10);
+        return num >= 0 && num <= 255;
+      });
+    }
+    
+    // Check IPv6
+    if (ipv6Regex.test(ip)) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchValue(value);
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
+  };
+
+  const handleSearch = async () => {
+    // Prevent multiple submissions
+    if (loading) {
+      return;
+    }
+
+    if (!searchValue.trim()) {
+      setError('Please enter an IP address');
+      return;
+    }
+
+    if (!isValidIP(searchValue.trim())) {
+      setError('Please enter a valid IP address');
+      return;
+    }
+
+    // Valid IP - proceed with search
+    setError('');
+    setLoading(true);
+    
+    try {
+      console.log('Searching for IP:', searchValue);
+      // TODO: Add actual search/API logic here
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      console.log('Search completed!');
+    } catch (err) {
+      setError('Failed to fetch IP data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !loading) {
+      handleSearch();
+    }
+  };
 
   const handleClearSearch = () => {
     setSearchValue('');
+    setError('');
   };
 
   return (
@@ -103,14 +185,24 @@ function Home() {
               placeholder="Search IP address (e.g., 8.8.8.8)"
               variant="outlined"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyPress={handleKeyPress}
+              error={!!error}
+              helperText={error}
+              disabled={loading}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search sx={{ color: '#999' }} />
+                    <IconButton size="small" onClick={handleSearch} disabled={loading}>
+                      {loading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <Search sx={{ color: error ? '#d32f2f' : '#999' }} />
+                      )}
+                    </IconButton>
                   </InputAdornment>
                 ),
-                endAdornment: searchValue && (
+                endAdornment: searchValue && !loading && (
                   <InputAdornment position="end">
                     <IconButton size="small" onClick={handleClearSearch}>
                       <Clear sx={{ fontSize: 20 }} />
@@ -127,6 +219,13 @@ function Home() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   paddingRight: 1,
+                },
+                '& .MuiFormHelperText-root': {
+                  backgroundColor: 'white',
+                  margin: 0,
+                  paddingLeft: 2,
+                  paddingRight: 2,
+                  paddingBottom: 1,
                 },
               }}
             />
