@@ -22,12 +22,12 @@ function App() {
           {/* Login Route */}
           <Route 
             path="/login" 
-            element={isAuthenticated() ? <Navigate to="/home" /> : <Login />} 
+            element={isAuthenticated() ? <Navigate to="/geo" /> : <Login />} 
           />
           
-          {/* Home Route (Protected) */}
+          {/* Geo Route (Protected) */}
           <Route 
-            path="/home" 
+            path="/geo" 
             element={
               <ProtectedRoute>
                 <Home />
@@ -38,7 +38,7 @@ function App() {
           {/* Default Route */}
           <Route 
             path="/" 
-            element={<Navigate to={isAuthenticated() ? "/home" : "/login"} />} 
+            element={<Navigate to={isAuthenticated() ? "/geo" : "/login"} />} 
           />
         </Routes>
       </div>

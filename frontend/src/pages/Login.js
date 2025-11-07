@@ -33,7 +33,7 @@ function Login() {
 
     try {
       // Call login API
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8000').replace(/\/$/, '');
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: {
@@ -52,8 +52,8 @@ function Login() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Redirect to home
-        navigate('/home');
+        // Redirect to geo page
+        navigate('/geo');
       } else {
         setError(data.message || 'Login failed');
       }
