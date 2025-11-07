@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -7,11 +7,23 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
+  Fade,
+  Divider,
+  Drawer,
+  Button,
 } from '@mui/material';
 import {
   LocationOn,
   Search,
   Clear,
+  History,
+  Delete,
+  ChevronRight,
+  Close,
 } from '@mui/icons-material';
 import GeoDrawer from '../components/GeoDrawer';
 
@@ -33,6 +45,37 @@ function Home() {
   const [searchValue, setSearchValue] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  
+  const searchRef = useRef(null);
+
+  // Load search history from localStorage on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('ipSearchHistory');
+    if (savedHistory) {
+      try {
+        setSearchHistory(JSON.parse(savedHistory));
+      } catch (err) {
+        console.error('Failed to load search history:', err);
+      }
+    }
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Validate IP address (IPv4 and IPv6)
   const isValidIP = (ip) => {
@@ -66,10 +109,28 @@ function Home() {
     const value = e.target.value;
     setSearchValue(value);
     
+    // Hide dropdown when user starts typing
+    if (showDropdown) {
+      setShowDropdown(false);
+    }
+    
     // Clear error when user starts typing
     if (error) {
       setError('');
     }
+  };
+
+  const saveToHistory = (ip) => {
+    const newHistory = [
+      {
+        ip: ip,
+        timestamp: new Date().toISOString(),
+      },
+      ...searchHistory.filter(item => item.ip !== ip), // Remove duplicate
+    ].slice(0, 10); // Keep only last 10 searches
+
+    setSearchHistory(newHistory);
+    localStorage.setItem('ipSearchHistory', JSON.stringify(newHistory));
   };
 
   const handleSearch = async () => {
@@ -91,6 +152,7 @@ function Home() {
     // Valid IP - proceed with search
     setError('');
     setLoading(true);
+    setShowDropdown(false);
     
     try {
       console.log('Searching for IP:', searchValue);
@@ -99,6 +161,9 @@ function Home() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       console.log('Search completed!');
+      
+      // Save to history on successful search
+      saveToHistory(searchValue.trim());
     } catch (err) {
       setError('Failed to fetch IP data. Please try again.');
     } finally {
@@ -117,6 +182,45 @@ function Home() {
     setError('');
   };
 
+  const handleFocus = () => {
+    if (searchHistory.length > 0) {
+      setShowDropdown(true);
+    }
+  };
+
+  const handleHistoryItemClick = (ip) => {
+    setSearchValue(ip);
+    setShowDropdown(false);
+  };
+
+  const handleDeleteHistoryItem = (ip, e) => {
+    e.stopPropagation();
+    const newHistory = searchHistory.filter(item => item.ip !== ip);
+    setSearchHistory(newHistory);
+    localStorage.setItem('ipSearchHistory', JSON.stringify(newHistory));
+  };
+
+  const handleClearAllHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('ipSearchHistory');
+    setShowDropdown(false);
+    setDrawerOpen(false);
+  };
+
+  const handleOpenDrawer = () => {
+    setShowDropdown(false);
+    setDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+  };
+
+  const handleDrawerHistoryClick = (ip) => {
+    setSearchValue(ip);
+    setDrawerOpen(false);
+  };
+
   return (
     <Box
       sx={{
@@ -124,15 +228,15 @@ function Home() {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 2,
+        padding: { xs: 0, md: 2 },
       }}
     >
       <Paper
         sx={{
           width: '100%',
-          maxWidth: '60vw',
-          height: '80vh',
-          borderRadius: 3,
+          maxWidth: { xs: '100vw', md: '60vw' },
+          height: { xs: '100vh', md: '80vh' },
+          borderRadius: { xs: 0, md: 3 },
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
           position: 'relative',
           overflow: 'hidden',
@@ -163,6 +267,7 @@ function Home() {
 
         {/* Floating Search Bar */}
         <Box
+          ref={searchRef}
           sx={{
             position: 'absolute',
             top: 20,
@@ -177,7 +282,7 @@ function Home() {
             elevation={3}
             sx={{
               borderRadius: 3,
-              overflow: 'hidden',
+              overflow: showDropdown ? 'visible' : 'hidden',
             }}
           >
             <TextField
@@ -187,6 +292,7 @@ function Home() {
               value={searchValue}
               onChange={handleSearchChange}
               onKeyPress={handleKeyPress}
+              onFocus={handleFocus}
               error={!!error}
               helperText={error}
               disabled={loading}
@@ -229,12 +335,239 @@ function Home() {
                 },
               }}
             />
+
+            {/* Search History Dropdown */}
+            <Fade in={showDropdown}>
+              <Paper
+                elevation={3}
+                sx={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  marginTop: 1,
+                  maxHeight: 300,
+                  overflowY: 'auto',
+                  borderRadius: 2,
+                  display: showDropdown ? 'block' : 'none',
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px 16px',
+                    borderBottom: '1px solid #f0f0f0',
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: '#999', fontWeight: 600 }}>
+                    RECENT SEARCHES
+                  </Typography>
+                  {searchHistory.length > 0 && (
+                    <IconButton size="small" onClick={handleClearAllHistory}>
+                      <Delete sx={{ fontSize: 16, color: '#999' }} />
+                    </IconButton>
+                  )}
+                </Box>
+
+                {searchHistory.length > 0 ? (
+                  <>
+                    <List sx={{ padding: 0 }}>
+                      {searchHistory.slice(0, 2).map((item, index) => (
+                        <React.Fragment key={item.ip}>
+                          <ListItemButton
+                            onClick={() => handleHistoryItemClick(item.ip)}
+                            sx={{
+                              padding: '12px 16px',
+                              '&:hover': {
+                                backgroundColor: '#f5f5f5',
+                              },
+                            }}
+                          >
+                            <History sx={{ fontSize: 18, color: '#999', marginRight: 1.5 }} />
+                            <ListItemText
+                              primary={item.ip}
+                              secondary={new Date(item.timestamp).toLocaleString()}
+                              primaryTypographyProps={{
+                                fontSize: 14,
+                                fontWeight: 500,
+                              }}
+                              secondaryTypographyProps={{
+                                fontSize: 11,
+                              }}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleDeleteHistoryItem(item.ip, e)}
+                              sx={{ marginLeft: 1 }}
+                            >
+                              <Clear sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </ListItemButton>
+                          {index < 1 && <Divider />}
+                        </React.Fragment>
+                      ))}
+                    </List>
+                    
+                    {/* See All Link */}
+                    {searchHistory.length > 2 && (
+                      <>
+                        <Divider />
+                        <ListItemButton
+                          onClick={handleOpenDrawer}
+                          sx={{
+                            padding: '10px 16px',
+                            justifyContent: 'center',
+                            '&:hover': {
+                              backgroundColor: '#f5f5f5',
+                            },
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: '#667eea',
+                              fontWeight: 600,
+                              fontSize: 13,
+                            }}
+                          >
+                            See search history
+                          </Typography>
+                          <ChevronRight sx={{ fontSize: 18, color: '#667eea', marginLeft: 0.5 }} />
+                        </ListItemButton>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Box sx={{ padding: 3, textAlign: 'center' }}>
+                    <Typography variant="body2" sx={{ color: '#999' }}>
+                      No search history yet
+                    </Typography>
+                  </Box>
+                )}
+              </Paper>
+            </Fade>
           </Paper>
         </Box>
 
         {/* Bottom Drawer */}
         <GeoDrawer geoData={geoData} />
       </Paper>
+
+      {/* History Drawer (Slides from right) */}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={handleCloseDrawer}
+        PaperProps={{
+          sx: {
+            width: { xs: '100%', sm: 400 },
+          },
+        }}
+      >
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Drawer Header */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: 2.5,
+              borderBottom: '1px solid #f0f0f0',
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Search History
+            </Typography>
+            <IconButton onClick={handleCloseDrawer}>
+              <Close />
+            </IconButton>
+          </Box>
+
+          {/* Drawer Content */}
+          <Box sx={{ flex: 1, overflowY: 'auto' }}>
+            {searchHistory.length > 0 ? (
+              <List sx={{ padding: 0 }}>
+                {searchHistory.map((item, index) => (
+                  <React.Fragment key={item.ip}>
+                    <ListItemButton
+                      onClick={() => handleDrawerHistoryClick(item.ip)}
+                      sx={{
+                        padding: '16px 20px',
+                        '&:hover': {
+                          backgroundColor: '#f5f5f5',
+                        },
+                      }}
+                    >
+                      <History sx={{ fontSize: 20, color: '#999', marginRight: 2 }} />
+                      <ListItemText
+                        primary={item.ip}
+                        secondary={new Date(item.timestamp).toLocaleString()}
+                        primaryTypographyProps={{
+                          fontSize: 15,
+                          fontWeight: 600,
+                        }}
+                        secondaryTypographyProps={{
+                          fontSize: 12,
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleDeleteHistoryItem(item.ip, e)}
+                        sx={{ marginLeft: 1 }}
+                      >
+                        <Delete sx={{ fontSize: 18, color: '#ff6b6b' }} />
+                      </IconButton>
+                    </ListItemButton>
+                    {index < searchHistory.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            ) : (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  padding: 4,
+                }}
+              >
+                <History sx={{ fontSize: 60, color: '#ddd', marginBottom: 2 }} />
+                <Typography variant="body1" sx={{ color: '#999', textAlign: 'center' }}>
+                  No search history yet
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* Drawer Footer */}
+          {searchHistory.length > 0 && (
+            <Box
+              sx={{
+                padding: 2,
+                borderTop: '1px solid #f0f0f0',
+              }}
+            >
+              <Button
+                fullWidth
+                variant="outlined"
+                color="error"
+                startIcon={<Delete />}
+                onClick={handleClearAllHistory}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                Clear All History
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Drawer>
     </Box>
   );
 }
