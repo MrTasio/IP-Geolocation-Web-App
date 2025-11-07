@@ -26,6 +26,7 @@ import {
   Close,
 } from '@mui/icons-material';
 import GeoDrawer from '../components/GeoDrawer';
+import MapView from '../components/MapView';
 
 function Home() {
   // Static data for display purposes only
@@ -321,24 +322,16 @@ function Home() {
           }}
         >
           {initialLoading ? (
-            <Box sx={{ textAlign: 'center' }}>
+            <Box sx={{ textAlign: 'center', zIndex: 1 }}>
               <CircularProgress size={60} sx={{ color: '#999', marginBottom: 2 }} />
               <Typography variant="body2" sx={{ color: '#999' }}>
                 Loading location...
               </Typography>
             </Box>
-          ) : geoData ? (
-            <Box sx={{ textAlign: 'center' }}>
-              <LocationOn sx={{ fontSize: 60, color: '#999', marginBottom: 1 }} />
-              <Typography variant="h6" sx={{ color: '#999' }}>
-                {geoData.city || 'Unknown'}, {geoData.country || 'Unknown'}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#999' }}>
-                {geoData.loc || 'No coordinates'}
-              </Typography>
-            </Box>
+          ) : geoData && geoData.loc ? (
+            <MapView geoData={geoData} />
           ) : (
-            <Box sx={{ textAlign: 'center' }}>
+            <Box sx={{ textAlign: 'center', zIndex: 1 }}>
               <LocationOn sx={{ fontSize: 60, color: '#999', marginBottom: 1 }} />
               <Typography variant="h6" sx={{ color: '#999' }}>
                 No location data
@@ -357,7 +350,7 @@ function Home() {
             transform: 'translateX(-50%)',
             width: '90%',
             maxWidth: 500,
-            zIndex: 10,
+            zIndex: 1001,
           }}
         >
           <Paper
@@ -365,6 +358,7 @@ function Home() {
             sx={{
               borderRadius: 3,
               overflow: showDropdown ? 'visible' : 'hidden',
+              zIndex: 1000,
             }}
           >
             <TextField

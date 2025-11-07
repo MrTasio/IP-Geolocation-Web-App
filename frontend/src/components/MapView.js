@@ -1,0 +1,61 @@
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icon in React-Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
+
+// Component to update map center when coordinates change
+function MapUpdater({ center }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (center) {
+      map.setView(center, 13);
+    }
+  }, [center, map]);
+  
+  return null;
+}
+
+function MapView({ geoData }) {
+  if (!geoData || !geoData.loc) {
+    return null;
+  }
+
+  const [lat, lon] = geoData.loc.split(',').map(Number);
+  const center = [lat, lon];
+
+  return (
+    <MapContainer
+      center={center}
+      zoom={13}
+      style={{ height: '100%', width: '100%' }}
+      zoomControl={true}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <Marker position={center}>
+        <Popup>
+          <strong>{geoData.ip}</strong>
+          <br />
+          {geoData.city}, {geoData.region}
+          <br />
+          {geoData.country}
+        </Popup>
+      </Marker>
+      <MapUpdater center={center} />
+    </MapContainer>
+  );
+}
+
+export default MapView;
+

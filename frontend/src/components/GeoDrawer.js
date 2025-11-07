@@ -36,6 +36,7 @@ function GeoDrawer({ geoData }) {
         borderTopRightRadius: 20,
         boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.3s ease-in-out',
+        zIndex: 1000,
       }}
     >
       {/* Drawer Handle */}
