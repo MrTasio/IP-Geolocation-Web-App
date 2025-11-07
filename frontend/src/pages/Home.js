@@ -30,16 +30,6 @@ import GeoDrawer from '../components/GeoDrawer';
 function Home() {
   // Static data for display purposes only
   const userData = { name: 'John Doe' };
-  const geoData = {
-    ip: '8.8.8.8',
-    city: 'Mountain View',
-    region: 'California',
-    country: 'US',
-    loc: '37.4056,-122.0775',
-    org: 'Google LLC',
-    postal: '94043',
-    timezone: 'America/Los_Angeles',
-  };
 
   // Search state
   const [searchValue, setSearchValue] = useState('');
@@ -48,6 +38,8 @@ function Home() {
   const [searchHistory, setSearchHistory] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [geoData, setGeoData] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
   
   const searchRef = useRef(null);
 
@@ -61,6 +53,24 @@ function Home() {
         console.error('Failed to load search history:', err);
       }
     }
+  }, []);
+
+  // Fetch user's current IP geolocation on mount
+  useEffect(() => {
+    const fetchCurrentIPLocation = async () => {
+      try {
+        const response = await fetch('https://ipinfo.io/json');
+        const data = await response.json();
+        setGeoData(data);
+      } catch (err) {
+        console.error('Failed to fetch current location:', err);
+        setError('Failed to load current location');
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchCurrentIPLocation();
   }, []);
 
   // Close dropdown when clicking outside
@@ -155,16 +165,31 @@ function Home() {
     setShowDropdown(false);
     
     try {
-      console.log('Searching for IP:', searchValue);
-      // TODO: Add actual search/API logic here
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const ip = searchValue.trim();
+      console.log('Searching for IP:', ip);
       
-      console.log('Search completed!');
+      // Fetch geolocation data from ipinfo.io
+      const response = await fetch(`https://ipinfo.io/${ip}/json`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch IP data');
+      }
+      
+      const data = await response.json();
+      
+      // Check if IP was found
+      if (data.bogon) {
+        setError('This IP address is a private/bogon IP and has no geolocation data');
+        return;
+      }
+      
+      setGeoData(data);
+      console.log('Search completed!', data);
       
       // Save to history on successful search
-      saveToHistory(searchValue.trim());
+      saveToHistory(ip);
     } catch (err) {
+      console.error('API Error:', err);
       setError('Failed to fetch IP data. Please try again.');
     } finally {
       setLoading(false);
@@ -177,9 +202,22 @@ function Home() {
     }
   };
 
-  const handleClearSearch = () => {
+  const handleClearSearch = async () => {
     setSearchValue('');
     setError('');
+    
+    // Fetch current IP location again
+    setLoading(true);
+    try {
+      const response = await fetch('https://ipinfo.io/json');
+      const data = await response.json();
+      setGeoData(data);
+    } catch (err) {
+      console.error('Failed to fetch current location:', err);
+      setError('Failed to load current location');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFocus = () => {
@@ -188,9 +226,23 @@ function Home() {
     }
   };
 
-  const handleHistoryItemClick = (ip) => {
+  const handleHistoryItemClick = async (ip) => {
     setSearchValue(ip);
     setShowDropdown(false);
+    
+    // Fetch the IP data
+    setLoading(true);
+    try {
+      const response = await fetch(`https://ipinfo.io/${ip}/json`);
+      if (response.ok) {
+        const data = await response.json();
+        setGeoData(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch IP data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteHistoryItem = (ip, e) => {
@@ -216,9 +268,23 @@ function Home() {
     setDrawerOpen(false);
   };
 
-  const handleDrawerHistoryClick = (ip) => {
+  const handleDrawerHistoryClick = async (ip) => {
     setSearchValue(ip);
     setDrawerOpen(false);
+    
+    // Fetch the IP data
+    setLoading(true);
+    try {
+      const response = await fetch(`https://ipinfo.io/${ip}/json`);
+      if (response.ok) {
+        const data = await response.json();
+        setGeoData(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch IP data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -254,15 +320,31 @@ function Home() {
             position: 'relative',
           }}
         >
-          <Box sx={{ textAlign: 'center' }}>
-            <LocationOn sx={{ fontSize: 60, color: '#999', marginBottom: 1 }} />
-            <Typography variant="h6" sx={{ color: '#999' }}>
-              Map View
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#999' }}>
-              {geoData.loc}
-            </Typography>
-          </Box>
+          {initialLoading ? (
+            <Box sx={{ textAlign: 'center' }}>
+              <CircularProgress size={60} sx={{ color: '#999', marginBottom: 2 }} />
+              <Typography variant="body2" sx={{ color: '#999' }}>
+                Loading location...
+              </Typography>
+            </Box>
+          ) : geoData ? (
+            <Box sx={{ textAlign: 'center' }}>
+              <LocationOn sx={{ fontSize: 60, color: '#999', marginBottom: 1 }} />
+              <Typography variant="h6" sx={{ color: '#999' }}>
+                {geoData.city || 'Unknown'}, {geoData.country || 'Unknown'}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#999' }}>
+                {geoData.loc || 'No coordinates'}
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center' }}>
+              <LocationOn sx={{ fontSize: 60, color: '#999', marginBottom: 1 }} />
+              <Typography variant="h6" sx={{ color: '#999' }}>
+                No location data
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* Floating Search Bar */}
@@ -452,7 +534,7 @@ function Home() {
         </Box>
 
         {/* Bottom Drawer */}
-        <GeoDrawer geoData={geoData} />
+        {geoData && <GeoDrawer geoData={geoData} />}
       </Paper>
 
       {/* History Drawer (Slides from right) */}
